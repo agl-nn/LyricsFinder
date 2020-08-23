@@ -7,11 +7,11 @@ BASE_URL = 'https://api.genius.com/'
 
 
 class LyricsFinder:
-    def __init__(self, token):
+    def __init__(self, token: str):
         self.genius_oauth = token
         self.lyrics_dir = os.path.join(os.getcwd(), 'lyrics' + os.sep)
 
-    def get_lyrics_url(self, artist, track):
+    def get_lyrics_url(self, artist: str, track: str) -> str:
         """
         метод ищет на сайте genius.com трек track у автора artist
         возвращает ссылку на страницу для парсинга текста
@@ -28,7 +28,7 @@ class LyricsFinder:
             if artist.lower().strip() in artist_name.lower():
                 return lyrics_url
 
-    def get_lyrics_by_url(self, artist, track):
+    def get_lyrics_by_url(self, artist: str, track: str) -> dict:
         """
         метод парсит страницу, полученную с помощью get_lyrics_url
         возвращает текст песни
@@ -44,7 +44,7 @@ class LyricsFinder:
         result.update({'artist': artist, 'track': track, 'lyrics': lyrics})
         return result
 
-    def write_lyrics_to_txt(self, lyrics):
+    def write_lyrics_to_txt(self, lyrics: dict):
         artist = lyrics['artist'].capitalize()
         track = lyrics['track'].capitalize()
         title = f'{artist} -- {track}'
@@ -53,7 +53,7 @@ class LyricsFinder:
             for line in lyrics['lyrics']:
                 f.write(line)
 
-    def get_lyrics_from_txt(self, artist, track):
+    def get_lyrics_from_txt(self, artist: str, track: str):
         file_name = f'{artist.capitalize()} -- {track.capitalize()}.txt'
         dir_content = os.listdir(self.lyrics_dir)
         if file_name in dir_content:
@@ -63,7 +63,7 @@ class LyricsFinder:
         else:
             return None
 
-    def get_lyrics(self, artist, track):
+    def get_lyrics(self, artist: str, track: str) -> str:
         lyrics_from_txt = self.get_lyrics_from_txt(artist, track)
         if lyrics_from_txt:
             print('from get_lyrics_from_txt method')
