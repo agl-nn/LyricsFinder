@@ -1,5 +1,4 @@
 import requests
-from pprint import pprint
 from bs4 import BeautifulSoup
 import os
 
@@ -37,16 +36,20 @@ class LyricsFinder:
         url = self.get_lyrics_url(artist, track)
         if not url:
             raise Exception('failed to get url on request')
-        post_page = requests.get(url)
-        soup = BeautifulSoup(post_page.text, 'html.parser')
+        while True:
+            post_page = requests.get(url)
+            soup = BeautifulSoup(post_page.content, 'html.parser')
+            lyrics = soup.find_all('div', class_='lyrics')
+            if len(lyrics) != 0:
+                break
         text = soup.select('[class~=lyrics]')
         lyrics = text[0].text
         result.update({'artist': artist, 'track': track, 'lyrics': lyrics})
         return result
 
     def write_lyrics_to_txt(self, lyrics: dict):
-        artist = lyrics['artist'].capitalize()
-        track = lyrics['track'].capitalize()
+        artist = lyrics['artist'].title()
+        track = lyrics['track'].title()
         title = f'{artist} -- {track}'
         with open(f'{self.lyrics_dir}{title}.txt', 'w', encoding='utf=8') as f:
             f.write(title)
@@ -54,7 +57,7 @@ class LyricsFinder:
                 f.write(line)
 
     def get_lyrics_from_txt(self, artist: str, track: str):
-        file_name = f'{artist.capitalize()} -- {track.capitalize()}.txt'
+        file_name = f'{artist.title()} -- {track.title()}.txt'
         dir_content = os.listdir(self.lyrics_dir)
         if file_name in dir_content:
             with open(f'{self.lyrics_dir}{file_name}', 'r', encoding='utf-8') as f:
@@ -66,17 +69,17 @@ class LyricsFinder:
     def get_lyrics(self, artist: str, track: str) -> str:
         lyrics_from_txt = self.get_lyrics_from_txt(artist, track)
         if lyrics_from_txt:
-            print('from get_lyrics_from_txt method')
+            print(f'{artist} -- {track} -- from get_lyrics_from_txt method')
             return lyrics_from_txt
         else:
             lyrics_by_url = self.get_lyrics_by_url(artist, track)
-            print('from get_lyrics_by_url method')
+            print(f'{artist} -- {track} -- from get_lyrics_from_url method')
             self.write_lyrics_to_txt(lyrics_by_url)
             return self.get_lyrics_from_txt(artist, track)
 
 
 if __name__ == '__main__':
-    TOKEN = ''
+    TOKEN = os.getenv('GENIUS_COM_API_KEY')
     finder = LyricsFinder(TOKEN)
+    print(finder.get_lyrics('nirvana', 'smells like teen spirit'))
 
-    print(finder.get_lyrics('nirvana', 'come as you are'))
