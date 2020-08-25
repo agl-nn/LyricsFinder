@@ -43,8 +43,7 @@ class LyricsFinder:
             lyrics = soup.find_all('div', class_='lyrics')
             if len(lyrics) != 0:
                 break
-        text = soup.select('[class~=lyrics]')
-        parsed_lyrics = text[0].text
+        parsed_lyrics = lyrics[0].text
         Lyrics = namedtuple('Lyrics', ['artist', 'track', 'lyrics'])
         lyrics = Lyrics(artist, track, parsed_lyrics)
         return lyrics
