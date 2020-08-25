@@ -1,6 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 import os
+from typing import Optional
+from collections import namedtuple
 
 BASE_URL = 'https://api.genius.com/'
 
@@ -27,12 +29,11 @@ class LyricsFinder:
             if artist.lower().strip() in artist_name.lower():
                 return lyrics_url
 
-    def get_lyrics_by_url(self, artist: str, track: str) -> dict:
+    def get_lyrics_by_url(self, artist: str, track: str) -> namedtuple:
         """
         метод парсит страницу, полученную с помощью get_lyrics_url
         возвращает текст песни
         """
-        result = {}
         url = self.get_lyrics_url(artist, track)
         if not url:
             raise Exception('failed to get url on request')
@@ -43,30 +44,48 @@ class LyricsFinder:
             if len(lyrics) != 0:
                 break
         text = soup.select('[class~=lyrics]')
-        lyrics = text[0].text
-        result.update({'artist': artist, 'track': track, 'lyrics': lyrics})
-        return result
+        parsed_lyrics = text[0].text
+        Lyrics = namedtuple('Lyrics', ['artist', 'track', 'lyrics'])
+        lyrics = Lyrics(artist, track, parsed_lyrics)
+        return lyrics
 
-    def write_lyrics_to_txt(self, lyrics: dict):
-        artist = lyrics['artist'].title()
-        track = lyrics['track'].title()
-        title = f'{artist} -- {track}'
-        with open(f'{self.lyrics_dir}{title}.txt', 'w', encoding='utf=8') as f:
-            f.write(title)
-            for line in lyrics['lyrics']:
+    def write_lyrics_to_txt(self, lyrics: namedtuple):
+        """
+        пишет текст песни в файл
+        """
+        artist = lyrics.artist.title()
+        track = lyrics.track.title()
+        print('from namedtuple', artist, track)
+        # папка с текстами исполнителя artist в папке self.lyrics_dir:
+        artist_dir = os.path.join(self.lyrics_dir, artist)
+        # если папки artist_dir не существует - создаём её и сохраняем все тексты исполонителя туда:
+        if artist not in os.listdir(self.lyrics_dir) and not os.path.isdir(artist_dir):
+            os.mkdir(artist_dir)
+        with open(f'{artist_dir}{os.sep}{track}.txt', 'w', encoding='utf=8') as f:
+            f.write(f'{artist} -- {track}')
+            for line in lyrics.lyrics:
                 f.write(line)
 
-    def get_lyrics_from_txt(self, artist: str, track: str):
+    def get_lyrics_from_txt(self, artist: str, track: str) -> Optional[str]:
+        """
+        метод ищет и возвращает текст запрашиваемого трека в папке исполнителя artist_dir
+        если документа с треком в папке нет, возвращает None
+        """
         file_name = f'{artist.title()} -- {track.title()}.txt'
-        dir_content = os.listdir(self.lyrics_dir)
-        if file_name in dir_content:
-            with open(f'{self.lyrics_dir}{file_name}', 'r', encoding='utf-8') as f:
+        artist_dir = os.path.join(self.lyrics_dir, artist).title()
+        if artist_dir in self.lyrics_dir and file_name in os.listdir(artist_dir):
+            with open(f'{artist_dir + os.sep}{file_name}', 'r', encoding='utf-8') as f:
                 lyrics = f.read()
             return lyrics
         else:
             return None
 
     def get_lyrics(self, artist: str, track: str) -> str:
+        """
+        метод принимает на вход название исполнителя и трека для поиска.
+        если искомый текст нельзя найти в файле с помощью метода get_lyrics_from_txt
+        парсит его с get_lyrics_by_url, пишет в файл и возвращает текст
+        """
         lyrics_from_txt = self.get_lyrics_from_txt(artist, track)
         if lyrics_from_txt:
             print(f'{artist} -- {track} -- from get_lyrics_from_txt method')
@@ -81,5 +100,4 @@ class LyricsFinder:
 if __name__ == '__main__':
     TOKEN = os.getenv('GENIUS_COM_API_KEY')
     finder = LyricsFinder(TOKEN)
-    print(finder.get_lyrics('nirvana', 'smells like teen spirit'))
-
+    finder.get_lyrics('nirvana', 'lithium')
