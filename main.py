@@ -1,13 +1,18 @@
 import os
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, MessageHandler, ConversationHandler, Filters
 from lyrics_finder import LyricsFinder
 
 ARTIST, TRACK = range(2)
 
+keyboard = [['/cancel', '/start']]
+markup_keyboard = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=False)
+
 
 def start(update, context):
     user = update.message.from_user['first_name']
-    update.message.reply_text(f"ok, {user}! \nlet's get it started! type artist name for search")
+    update.message.reply_text(f"ok, {user}! \nlet's get it started! type artist name for search",
+                              reply_markup=markup_keyboard)
     return ARTIST
 
 
@@ -51,7 +56,6 @@ def main():
                 },
         fallbacks=[CommandHandler('cancel', cancel)]
     )
-
     dispatcher.add_handler(conv_handler)
     updater.start_polling()
     return

@@ -17,17 +17,27 @@ class LyricsFinder:
         метод ищет на сайте genius.com трек track у автора artist
         возвращает ссылку на страницу для парсинга текста
         """
+        # приводим к нижнему регистру имя исполнителя и трека:
+        artist = artist.lower().strip()
+        track = track.lower().strip()
         url = BASE_URL + 'search'
-        params = {'access_token': self.genius_oauth, 'q': track}
-        r = requests.get(url, params=params)
-        if not r.ok:
-            raise Exception(f'Something went wrong! Error code: {r.status_code}')
-        search_result = r.json()['response']['hits']
-        for item in search_result:
-            artist_name = item['result']['primary_artist']['name']
-            lyrics_url = item['result']['url']
-            if artist.lower().strip() in artist_name.lower():
-                return lyrics_url
+        page = 1
+        while True:
+            params = {'access_token': self.genius_oauth, 'q': track, 'per_page': 20, 'page': page}
+            r = requests.get(url, params=params)
+            if not r.ok:
+                raise Exception(f'Something went wrong! Error code: {r.status_code}')
+            search_result = r.json()['response']['hits']
+            if search_result:
+                for item in search_result:
+                    artist_from_response = item['result']['primary_artist']['name'].lower()
+                    track_from_response = item['result']['title'].lower()
+                    lyrics_url = item['result']['url']
+                    if artist in artist_from_response and track in track_from_response:
+                        return lyrics_url
+                page += 1
+            else:
+                raise Exception(f'Unable to find track')
 
     def get_lyrics_by_url(self, artist: str, track: str) -> namedtuple:
         """
@@ -97,4 +107,4 @@ class LyricsFinder:
 if __name__ == '__main__':
     TOKEN = os.getenv('GENIUS_COM_API_KEY')
     finder = LyricsFinder(TOKEN)
-    print(finder.get_lyrics_from_txt('nirvana', 'lithium'))
+    result = finder.get_lyrics('nirvana', 'school')
