@@ -12,24 +12,23 @@ def start(update, context):
 
 
 def get_artist(update, context):
-    data = context.user_data
     artist = update.message.text
-    data['artist'] = artist
     update.message.reply_text(f'the artist you looking for is {artist.title()}')
     update.message.reply_text('and now type track name for search')
-    data.update({'artist': artist})
+    context.user_data.update({'artist': artist})
     return TRACK
 
 
 def get_track(update, context):
-    data = context.user_data
     track = update.message.text
-    data['track'] = track
+    context.user_data.update({'track': track})
 
     token = os.getenv('GENIUS_COM_API_KEY')
     finder = LyricsFinder(token)
+
     artist = context.user_data['artist']
     track = context.user_data['track']
+
     answer = finder.get_lyrics(artist, track)
     update.message.reply_text(answer)
     return ConversationHandler.END
