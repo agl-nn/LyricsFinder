@@ -1,5 +1,5 @@
 import os
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import ReplyKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, ConversationHandler, Filters
 from lyrics_finder import LyricsFinder
 
@@ -35,7 +35,10 @@ def get_track(update, context):
     track = context.user_data['track']
 
     answer = finder.get_lyrics(artist, track)
-    update.message.reply_text(answer)
+    if answer:
+        update.message.reply_text(answer)
+    else:
+        update.message.reply_text('unable to find lyrics by your request')
     return ConversationHandler.END
 
 
